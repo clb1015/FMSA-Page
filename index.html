@@ -384,29 +384,39 @@
                         fillColor: '#ccc',
                         fillOpacity: 0.5
                     },
-                    onEachFeature: function(feature, layer) {
-                        const countyName = feature.properties.NAME;
-                        const countyInfo = counties[countyName];
+                 onEachFeature: function(feature, layer) {
+    const countyName = feature.properties.NAME;
+    const countyInfo = counties[countyName];
 
-                        if (countyInfo) {
-                            layer.bindTooltip(`${countyName}`, {
-                                className: 'county-tooltip',
-                                sticky: true
-                            });
+    if (countyInfo) {
+        // Create tooltip content with placeholders for supervisor data
+        const tooltipContent = `
+            <strong>${countyName}</strong><br>
+            Supervisor: [Supervisor Placeholder]<br>
+            Email: [Email Placeholder]
+        `;
 
-                            layer.on('mouseover', function() {
-                                this.setStyle({ fillColor: '#6c757d', fillOpacity: 0.7 });
-                            });
+        layer.bindTooltip(tooltipContent, {
+            className: 'county-tooltip',
+            sticky: true
+        });
 
-                            layer.on('mouseout', function() {
-                                this.setStyle({ fillColor: '#ccc', fillOpacity: 0.5 });
-                            });
+        // Style changes on hover
+        layer.on('mouseover', function() {
+            this.setStyle({ fillColor: '#6c757d', fillOpacity: 0.7 });
+        });
 
-                            layer.on('click', function() {
-                                window.open(countyInfo.website, '_blank');
-                            });
-                        }
-                    }
+        layer.on('mouseout', function() {
+            this.setStyle({ fillColor: '#ccc', fillOpacity: 0.5 });
+        });
+
+        // Open school district website on click
+        layer.on('click', function() {
+            window.open(countyInfo.website, '_blank');
+        });
+    }
+}
+
                 }).addTo(map);
             })
             .catch(err => console.error(err));
