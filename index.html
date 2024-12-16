@@ -1,28 +1,96 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Florida County Map</title>
+    <title>Florida Music Education Opportunities</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
-        #map {
-            height: 600px;
-            width: 100%;
-            margin: 0 auto;
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
         }
-        .county-tooltip {
-            background-color: #fff;
-            padding: 5px;
-            border: 1px solid #000;
-            border-radius: 5px;
-            font-size: 12px;
+
+        header {
+            background-color: #a31f39;
+            color: white;
+            padding: 10px 20px;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        header nav {
+            display: flex;
+            gap: 15px;
+        }
+
+        header nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 1rem;
+        }
+
+        #map {
+            height: calc(100vh - 60px);
+            margin-top: 60px;
+        }
+
+        #info {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            width: 300px;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        footer {
+            background-color: #a31f39;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        footer a {
+            color: white;
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
-    <h1>Florida Music Supervisors</h1>
-    <p>Please click on a county to view current music supervisor information</p>
+    <header>
+        <h1>Florida Music Education Map</h1>
+        <nav>
+            <a href="#">Home</a>
+            <a href="#">Jobs</a>
+            <a href="#">Contact Us</a>
+        </nav>
+    </header>
+
+    <div id="info">
+        <p><strong>Welcome!</strong></p>
+        <p>This interactive map highlights music education opportunities and resources across Florida's counties.</p>
+        <p>Click on a county to learn more about its music programs and opportunities.</p>
+    </div>
+
     <div id="map"></div>
 
+    <footer>
+        For inquiries, contact Dr. Christopher Burns, President of the Florida Music Supervision Association, Osceola County, at <a href="mailto:christopher.burns@osceolaschools.net">christopher.burns@osceolaschools.net</a>.
+    </footer>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         // Initialize the map
