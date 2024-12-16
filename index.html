@@ -123,32 +123,34 @@
                         fillColor: '#ccc',
                         fillOpacity: 0.5
                     },
-                    onEachFeature: function(feature, layer) {
+                                        onEachFeature: function(feature, layer) {
                         const countyName = feature.properties.NAME;
                         const countyInfo = counties[countyName];
-
+                    
                         if (countyInfo) {
-                            const tooltipContent = `
-                                <strong>${countyName}</strong><br>
-                                Supervisor: ${countyInfo.supervisor || 'TBD'}<br>
-                                Email: ${countyInfo.email || 'Not available'}
+                            // Define the content for the pop-up
+                            const popupContent = `
+                                <div>
+                                    <strong>${countyName} County</strong><br>
+                                    <b>Supervisor:</b> ${countyInfo.supervisor || 'No supervisor available'}<br>
+                                    <b>Email:</b> ${countyInfo.email !== "Not available" ? `<a href="mailto:${countyInfo.email}">${countyInfo.email}</a>` : 'Not available'}<br>
+                                    <b>Website:</b> ${countyInfo.website ? `<a href="${countyInfo.website}" target="_blank">District Website</a>` : 'Not available'}
+                                </div>
                             `;
-
-                            layer.bindTooltip(tooltipContent, {
-                                className: 'county-tooltip',
-                                sticky: true
-                            });
-
+                    
+                            // Bind the pop-up to the layer
+                            layer.bindPopup(popupContent);
+                    
                             layer.on('mouseover', function() {
                                 this.setStyle({ fillColor: '#6c757d', fillOpacity: 0.7 });
                             });
-
+                    
                             layer.on('mouseout', function() {
                                 this.setStyle({ fillColor: '#ccc', fillOpacity: 0.5 });
                             });
-
+                    
                             layer.on('click', function() {
-                                alert(`Clicked on ${countyName}`);
+                                this.openPopup();
                             });
                         } else {
                             console.warn(`No data available for county: ${countyName}`);
