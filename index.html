@@ -22,80 +22,6 @@
     <h1>Florida County Map</h1>
     <p>Hover over a county to see its supervisor and email. Click a county to visit its school district website.</p>
     <div id="map"></div>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-let counties = {};
-
-// Fetch and parse the CSV file
-Papa.parse('supervisors.csv', {
-    download: true,
-    header: true, // Treat the first row as headers
-    complete: function(results) {
-        results.data.forEach(row => {
-            counties[row.County] = {
-                supervisor: row.Supervisor,
-                email: row.Email,
-                website: row.Website
-            };
-        });
-        initializeMap(); // Call the map initialization after data is loaded
-    }
-});
-
-// Initialize the map after loading CSV data
-function initializeMap() {
-    var map = L.map('map').setView([27.9944024, -81.7602544], 7);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
-    }).addTo(map);
-
-    fetch('path-to-your-geojson-file.geojson')
-        .then(response => response.json())
-        .then(data => {
-            L.geoJSON(data, {
-                style: {
-                    color: '#000',
-                    weight: 1,
-                    fillColor: '#ccc',
-                    fillOpacity: 0.5
-                },
-                onEachFeature: function(feature, layer) {
-                    const countyName = feature.properties.NAME;
-                    const countyInfo = counties[countyName];
-
-                    if (countyInfo) {
-                        const tooltipContent = `
-                            <strong>${countyName}</strong><br>
-                            Supervisor: ${countyInfo.supervisor || 'TBD'}<br>
-                            Email: ${countyInfo.email || 'Not available'}
-                        `;
-
-                        layer.bindTooltip(tooltipContent, {
-                            className: 'county-tooltip',
-                            sticky: true
-                        });
-
-                        layer.on('mouseover', function() {
-                            this.setStyle({ fillColor: '#6c757d', fillOpacity: 0.7 });
-                            updateHoverBox(countyName, countyInfo);
-                        });
-
-                        layer.on('mouseout', function() {
-                            this.setStyle({ fillColor: '#ccc', fillOpacity: 0.5 });
-                            clearHoverBox();
-                        });
-
-                        layer.on('click', function() {
-                            window.open(countyInfo.website, '_blank');
-                        });
-                    }
-                }
-            }).addTo(map);
-        })
-        .catch(err => console.error('Error loading GeoJSON:', err));
-}
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
@@ -108,9 +34,347 @@ function initializeMap() {
             attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-       
+        // County data for all 67 counties in Florida
+        const counties = {
+            "Alachua": {
+                supervisor: "John Doe",
+                email: "johndoe@alachuaschools.org",
+                website: "https://www.sbac.edu/"
+            },
+            "Baker": {
+                supervisor: "Jane Smith",
+                email: "janesmith@bakerschools.org",
+                website: "https://www.bakerk12.org/"
+            },
+            "Bay": {
+                supervisor: "Sam Taylor",
+                email: "samtaylor@bay.k12.fl.us",
+                website: "https://www.bay.k12.fl.us/"
+            },
+            "Bradford": {
+                supervisor: "Lisa Harper",
+                email: "lisaharper@mybradford.us",
+                website: "https://www.bradfordschools.org/"
+            },
+            "Brevard": {
+                supervisor: "Tom Daniels",
+                email: "tomdaniels@brevardschools.org",
+                website: "https://www.brevardschools.org/"
+            },
+            "Broward": {
+                supervisor: "Kathy Brown",
+                email: "kathybrown@browardschools.com",
+                website: "https://www.browardschools.com/"
+            },
+            "Calhoun": {
+                supervisor: "Nancy Green",
+                email: "nancygreen@calhounflschools.org",
+                website: "https://www.calhounflschools.org/"
+            },
+            "Charlotte": {
+                supervisor: "Roger White",
+                email: "rogerwhite@yourcharlotteschools.net",
+                website: "https://www.yourcharlotteschools.net/"
+            },
+            "Citrus": {
+                supervisor: "Patricia Scott",
+                email: "patriciascott@citrusschools.org",
+                website: "https://www.citrusschools.org/"
+            },
+            "Clay": {
+                supervisor: "Bruce Lee",
+                email: "brucelee@myoneclay.net",
+                website: "https://www.oneclay.net/"
+            },
+            "Collier": {
+                supervisor: "Betty Johnson",
+                email: "bettyjohnson@collierschools.com",
+                website: "https://www.collierschools.com/"
+            },
+            "Columbia": {
+                supervisor: "James Parker",
+                email: "jamesparker@columbiak12.com",
+                website: "https://www.columbiak12.com/"
+            },
+            "DeSoto": {
+                supervisor: "Sarah Thompson",
+                email: "sarahthompson@desotoschools.com",
+                website: "https://www.desotoschools.com/"
+            },
+            "Dixie": {
+                supervisor: "Mark Hall",
+                email: "markhall@dixie.k12.fl.us",
+                website: "https://www.dixie.k12.fl.us/"
+            },
+            "Duval": {
+                supervisor: "Karen Williams",
+                email: "karenwilliams@duvalschools.org",
+                website: "https://www.duvalschools.org/"
+            },
+            "Escambia": {
+                supervisor: "Roberto Martinez",
+                email: "robertomartinez@escambiaschools.org",
+                website: "https://www.escambiaschools.org/"
+            },
+            "Flagler": {
+                supervisor: "Cynthia Clark",
+                email: "cynthiaclark@flaglerschools.com",
+                website: "https://www.flaglerschools.com/"
+            },
+            "Franklin": {
+                supervisor: "Leonard Moore",
+                email: "leonardmoore@franklincountyschools.org",
+                website: "https://www.franklincountyschools.org/"
+            },
+            "Gadsden": {
+                supervisor: "Alice Carter",
+                email: "alicecarter@gadsdenschools.org",
+                website: "https://www.gadsdenschools.org/"
+            },
+            "Gilchrist": {
+                supervisor: "Victor Hughes",
+                email: "victorhughes@gilchristschools.org",
+                website: "https://www.gilchristschools.org/"
+            },
+            "Glades": {
+                supervisor: "Maria Lopez",
+                email: "marialopez@gladesedu.com",
+                website: "https://www.gladesedu.com/"
+            },
+            "Gulf": {
+                supervisor: "Gregory Smith",
+                email: "gregorysmith@gulfcoschools.com",
+                website: "https://www.gulfcoschools.com/"
+            },
+            "Hamilton": {
+                supervisor: "Teresa Evans",
+                email: "teresaevans@hamiltonfl.com",
+                website: "https://www.hamiltonfl.com/"
+            },
+            "Hardee": {
+                supervisor: "Evan Fisher",
+                email: "evanfisher@hardee.k12.fl.us",
+                website: "https://www.hardee.k12.fl.us/"
+            },
+            "Hendry": {
+                supervisor: "Lydia Grant",
+                email: "lydiagrant@hendry-schools.org",
+                website: "https://www.hendry-schools.org/"
+            },
+            "Hernando": {
+                supervisor: "Joel Adams",
+                email: "joeladams@hernandoschools.org",
+                website: "https://www.hernandoschools.org/"
+            },
+            "Highlands": {
+                supervisor: "Sophia Ray",
+                email: "sophiaray@highlands.k12.fl.us",
+                website: "https://www.highlands.k12.fl.us/"
+            },
+            "Hillsborough": {
+                supervisor: "George Allen",
+                email: "georgeallen@sdhc.k12.fl.us",
+                website: "https://www.hillsboroughschools.org/"
+            },
+            "Holmes": {
+                supervisor: "Rita Simmons",
+                email: "ritasimmons@hdsb.org",
+                website: "https://www.hdsb.org/"
+            },
+            "Indian River": {
+                supervisor: "Diane West",
+                email: "dianewest@indianriverschools.org",
+                website: "https://www.indianriverschools.org/"
+            },
+            "Jackson": {
+                supervisor: "Charles Ford",
+                email: "charlesford@jcsb.org",
+                website: "https://www.jcsb.org/"
+            },
+            "Jefferson": {
+                supervisor: "Anne Collins",
+                email: "annecollins@jeffersonschooldistrict.org",
+                website: "https://www.jeffersonschooldistrict.org/"
+            },
+            "Lafayette": {
+                supervisor: "Jacob Owens",
+                email: "jacobowens@lafayette.k12.fl.us",
+                website: "https://www.lafayette.k12.fl.us/"
+            },
+            "Lake": {
+                supervisor: "Sharon Bell",
+                email: "sharonbell@lake.k12.fl.us",
+                website: "https://www.lake.k12.fl.us/"
+            },
+            "Lee": {
+                supervisor: "Emma Wright",
+                email: "emmawright@leeschools.net",
+                website: "https://www.leeschools.net/"
+            },
+            "Leon": {
+                supervisor: "Michael Scott",
+                email: "michaelscott@leonschools.net",
+                website: "https://www.leonschools.net/"
+            },
+            "Levy": {
+                supervisor: "Olivia Carter",
+                email: "oliviacarter@levyk12.org",
+                website: "https://www.levyk12.org/"
+            },
+            "Liberty": {
+                supervisor: "Francis Moore",
+                email: "francismoore@lcsb.org",
+                website: "https://www.lcsb.org/"
+            },
+            "Madison": {
+                supervisor: "Eleanor Blake",
+                email: "eleanorblake@madison.k12.fl.us",
+                website: "https://www.madison.k12.fl.us/"
+            },
+            "Manatee": {
+                supervisor: "Benjamin Hill",
+                email: "benjaminhill@manateeschools.net",
+                website: "https://www.manateeschools.net/"
+            },
+            "Marion": {
+                supervisor: "Vanessa Cox",
+                email: "vanessacox@marionschools.net",
+                website: "https://www.marionschools.net/"
+            },
+            "Martin": {
+                supervisor: "Leonard Harris",
+                email: "leonardharris@martinschools.org",
+                website: "https://www.martinschools.org/"
+            },
+            "Miami-Dade": {
+                supervisor: "Paul Garcia",
+                email: "paulgarcia@dadeschools.net",
+                website: "https://www.dadeschools.net/"
+            },
+            "Monroe": {
+                supervisor: "April Young",
+                email: "aprilyoung@keysschools.com",
+                website: "https://www.keysschools.com/"
+            },
+            "Nassau": {
+                supervisor: "Henry Brooks",
+                email: "henrybrooks@nassau.k12.fl.us",
+                website: "https://www.nassau.k12.fl.us/"
+            },
+            "Okaloosa": {
+                supervisor: "Laura Evans",
+                email: "lauraevans@okaloosaschools.com",
+                website: "https://www.okaloosaschools.com/"
+            },
+            "Okeechobee": {
+                supervisor: "Steve Hall",
+                email: "stevehall@okee.k12.fl.us",
+                website: "https://www.okee.k12.fl.us/"
+            },
+            "Orange": {
+                supervisor: "Megan Ross",
+                email: "meganross@ocps.net",
+                website: "https://www.ocps.net/"
+            },
+            "Osceola": {
+                supervisor: "William Rivera",
+                email: "williamrivera@osceolaschools.net",
+                website: "https://www.osceolaschools.net/"
+            },
+            "Palm Beach": {
+                supervisor: "Deborah Adams",
+                email: "deborahadams@palmbeachschools.org",
+                website: "https://www.palmbeachschools.org/"
+            },
+            "Pasco": {
+                supervisor: "Richard Lopez",
+                email: "richardlopez@pasco.k12.fl.us",
+                website: "https://www.pasco.k12.fl.us/"
+            },
+            "Pinellas": {
+                supervisor: "Nancy White",
+                email: "nancywhite@pcsb.org",
+                website: "https://www.pcsb.org/"
+            },
+            "Polk": {
+                supervisor: "Eric Torres",
+                email: "erictorres@polk-fl.net",
+                website: "https://www.polk-fl.net/"
+            },
+            "Putnam": {
+                supervisor: "Andrew Ross",
+                email: "andrewross@putnamschools.org",
+                website: "https://www.putnamschools.org/"
+            },
+            "Santa Rosa": {
+                supervisor: "Gloria Brown",
+                email: "gloriabrown@santarosa.k12.fl.us",
+                website: "https://www.santarosa.k12.fl.us/"
+            },
+            "Sarasota": {
+                supervisor: "Donna Black",
+                email: "donnablack@sarasotacountyschools.net",
+                website: "https://www.sarasotacountyschools.net/"
+            },
+            "Seminole": {
+                supervisor: "Philip King",
+                email: "philipking@scps.k12.fl.us",
+                website: "https://www.scps.k12.fl.us/"
+            },
+            "St. Johns": {
+                supervisor: "Victoria Mills",
+                email: "victoriamills@stjohns.k12.fl.us",
+                website: "https://www.stjohns.k12.fl.us/"
+            },
+            "St. Lucie": {
+                supervisor: "Patricia Perez",
+                email: "patriciaperez@stlucieschools.org",
+                website: "https://www.stlucieschools.org/"
+            },
+            "Sumter": {
+                supervisor: "Thomas Nelson",
+                email: "thomasnelson@sumter.k12.fl.us",
+                website: "https://www.sumter.k12.fl.us/"
+            },
+            "Suwannee": {
+                supervisor: "Brenda Cooper",
+                email: "brendacooper@suwannee.k12.fl.us",
+                website: "https://www.suwannee.k12.fl.us/"
+            },
+            "Taylor": {
+                supervisor: "Hannah Rogers",
+                email: "hannahrogers@taylor.k12.fl.us",
+                website: "https://www.taylor.k12.fl.us/"
+            },
+            "Union": {
+                supervisor: "Paul Anderson",
+                email: "paulanderson@union.k12.fl.us",
+                website: "https://www.union.k12.fl.us/"
+            },
+            "Volusia": {
+                supervisor: "Steven Walker",
+                email: "stevenwalker@volusia.k12.fl.us",
+                website: "https://www.volusia.k12.fl.us/"
+            },
+            "Wakulla": {
+                supervisor: "Lisa Brown",
+                email: "lisabrown@wakulla.k12.fl.us",
+                website: "https://www.wakulla.k12.fl.us/"
+            },
+            "Walton": {
+                supervisor: "Jacob Lewis",
+                email: "jacoblewis@walton.k12.fl.us",
+                website: "https://www.walton.k12.fl.us/"
+            },
+            "Washington": {
+                supervisor: "Rebecca White",
+                email: "rebeccawhite@wcsb.us",
+                website: "https://www.wcsb.us/"
+            }
+        };
+
          // Fetch GeoJSON data for Florida counties
-        fetch('Florida_County_Boundaries_with_FDOT_Districts_6074369993038631266.geojson') // Replace with actual GeoJSON file path
+        fetch('path-to-your-geojson-file.geojson') // Replace with actual GeoJSON file path
             .then(response => response.json())
             .then(data => {
                 L.geoJSON(data, {
@@ -120,38 +384,38 @@ function initializeMap() {
                         fillColor: '#ccc',
                         fillOpacity: 0.5
                     },
-                 onEachFeature: function(feature, layer) {
-    const countyName = feature.properties.NAME;
-    const countyInfo = counties[countyName];
-
-    if (countyInfo) {
-        // Create tooltip content with placeholders for supervisor data
-        const tooltipContent = `
-    <strong>${countyName}</strong><br>
-    Supervisor: ${countyInfo.supervisor || 'TBD'}<br>
-    Email: ${countyInfo.email || 'Not available'}
-`;
-
-        layer.bindTooltip(tooltipContent, {
-            className: 'county-tooltip',
-            sticky: true
-        });
-
-        // Style changes on hover
-        layer.on('mouseover', function() {
-            this.setStyle({ fillColor: '#6c757d', fillOpacity: 0.7 });
-        });
-
-        layer.on('mouseout', function() {
-            this.setStyle({ fillColor: '#ccc', fillOpacity: 0.5 });
-        });
-
-        // Open school district website on click
-        layer.on('click', function() {
-            window.open(countyInfo.website, '_blank');
-        });
-    }
-}
+                                       onEachFeature: function(feature, layer) {
+                        const countyName = feature.properties.NAME;
+                        const countyInfo = counties[countyName];
+                    
+                        if (countyInfo) {
+                            // Create tooltip content with placeholders for supervisor data
+                            const tooltipContent = `
+                                <strong>${countyName}</strong><br>
+                                Supervisor: [Supervisor Placeholder]<br>
+                                Email: [Email Placeholder]
+                            `;
+                    
+                            layer.bindTooltip(tooltipContent, {
+                                className: 'county-tooltip',
+                                sticky: true
+                            });
+                    
+                            // Style changes on hover
+                            layer.on('mouseover', function() {
+                                this.setStyle({ fillColor: '#6c757d', fillOpacity: 0.7 });
+                            });
+                    
+                            layer.on('mouseout', function() {
+                                this.setStyle({ fillColor: '#ccc', fillOpacity: 0.5 });
+                            });
+                    
+                            // Open school district website on click
+                            layer.on('click', function() {
+                                window.open(countyInfo.website, '_blank');
+                            });
+                        }
+                    }
 
                 }).addTo(map);
             })
