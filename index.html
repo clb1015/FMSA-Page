@@ -34,7 +34,11 @@
             attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-                   const counties = {
+        // GeoJSON data URL (update this to the correct path for your GeoJSON file)
+        const geoJsonUrl = 'Florida_County_Boundaries_with_FDOT_Districts_6074369993038631266.geojson';
+
+        // County data
+        const counties = {
             "Alachua": { supervisor: "Diana Rollo", email: "Rollod@gm.sbac.edu" },
             "Brevard": { supervisor: "Minnie Orr", email: "Orr.Minnie@brevardschools.org " },
             "Broward": { supervisor: "Joe Luechauer", email: "joeluechauer@browardschools.com" },
@@ -52,7 +56,7 @@
             "Miami-Dade": { supervisor: "Patricio Suarez", email: "psuarez@dadeschools.net " },
             "Monroe": { supervisor: "Gary Hernandez", email: "gary.hernandez@keysschools.com" },
             "Okaloosa": { supervisor: "Terry Schroeder", email: "Teresa.Schroeder@Okaloosaschools.com" },
-            "Orange": { supervisor: "Jason Locker", email: "Jason.Locker@ocps.net" },
+            "Orange": { supervisor: "Jason Locker", email: "Jason.locker@ocps.net" },
             "Osceola": { supervisor: "Chris Burns", email: "Christopher.Burns@osceolaschools.net " },
             "Palm Beach": { supervisor: "Cleve Maloon", email: "cleve.maloon@palmbeachschools.org" },
             "Pasco": { supervisor: "Thomas Viking", email: "tviking@pasco.k12.fl.us" },
@@ -65,13 +69,17 @@
             "St. Lucie": { supervisor: "Kevin Perry", email: "kevin.perry@stlucieschools.org" },
             "Volusia": { supervisor: "John Dupuis", email: "jjdupuis@volusia.k12.fl.us " },
             "Walton": { supervisor: "Jaime Mitchell", email: "mitchellj@walton.k12.fl.us" }
-            // Remaining counties would have "Supervisor TBD" and "Email TBD" if not available
-            };
 
+        };
 
-         // Fetch GeoJSON data for Florida counties
-        fetch('path-to-your-geojson-file.geojson') // Replace with actual GeoJSON file path
-            .then(response => response.json())
+        // Fetch and display GeoJSON data
+        fetch(geoJsonUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 L.geoJSON(data, {
                     style: {
@@ -80,47 +88,40 @@
                         fillColor: '#ccc',
                         fillOpacity: 0.5
                     },
-                                                           onEachFeature: function(feature, layer) {
+                    onEachFeature: function(feature, layer) {
                         const countyName = feature.properties.NAME;
                         const countyInfo = counties[countyName];
-                    
+
                         if (countyInfo) {
-                            // Create tooltip content with real supervisor data
                             const tooltipContent = `
                                 <strong>${countyName}</strong><br>
-                                Supervisor: ${countyInfo.supervisor || "TBD"}<br>
-                                Email: ${countyInfo.email || "Not available"}
+                                Supervisor: ${countyInfo.supervisor || 'TBD'}<br>
+                                Email: ${countyInfo.email || 'Not available'}
                             `;
-                    
+
                             layer.bindTooltip(tooltipContent, {
                                 className: 'county-tooltip',
                                 sticky: true
                             });
-                    
-                            // Style changes on hover
+
                             layer.on('mouseover', function() {
                                 this.setStyle({ fillColor: '#6c757d', fillOpacity: 0.7 });
                             });
-                    
+
                             layer.on('mouseout', function() {
                                 this.setStyle({ fillColor: '#ccc', fillOpacity: 0.5 });
                             });
-                    
-                            // Open school district website on click (if available)
+
                             layer.on('click', function() {
-                                if (countyInfo.website) {
-                                    window.open(countyInfo.website, '_blank');
-                                }
+                                alert(`Clicked on ${countyName}`);
                             });
                         } else {
-                            console.warn(`No data available for ${countyName}`);
+                            console.warn(`No data available for county: ${countyName}`);
                         }
                     }
-
                 }).addTo(map);
             })
-            .catch(err => console.error(err));
+            .catch(err => console.error('Error loading GeoJSON:', err));
     </script>
 </body>
 </html>
-
