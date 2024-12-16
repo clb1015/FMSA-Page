@@ -80,16 +80,16 @@
                         fillColor: '#ccc',
                         fillOpacity: 0.5
                     },
-                                       onEachFeature: function(feature, layer) {
+                                                           onEachFeature: function(feature, layer) {
                         const countyName = feature.properties.NAME;
                         const countyInfo = counties[countyName];
                     
                         if (countyInfo) {
-                            // Create tooltip content with placeholders for supervisor data
+                            // Create tooltip content with real supervisor data
                             const tooltipContent = `
                                 <strong>${countyName}</strong><br>
-                                Supervisor: [Supervisor Placeholder]<br>
-                                Email: [Email Placeholder]
+                                Supervisor: ${countyInfo.supervisor || "TBD"}<br>
+                                Email: ${countyInfo.email || "Not available"}
                             `;
                     
                             layer.bindTooltip(tooltipContent, {
@@ -106,10 +106,14 @@
                                 this.setStyle({ fillColor: '#ccc', fillOpacity: 0.5 });
                             });
                     
-                            // Open school district website on click
+                            // Open school district website on click (if available)
                             layer.on('click', function() {
-                                window.open(countyInfo.website, '_blank');
+                                if (countyInfo.website) {
+                                    window.open(countyInfo.website, '_blank');
+                                }
                             });
+                        } else {
+                            console.warn(`No data available for ${countyName}`);
                         }
                     }
 
