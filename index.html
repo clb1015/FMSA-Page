@@ -391,10 +391,10 @@
     if (countyInfo) {
         // Create tooltip content with placeholders for supervisor data
         const tooltipContent = `
-            <strong>${countyName}</strong><br>
-            Supervisor: [Supervisor Placeholder]<br>
-            Email: [Email Placeholder]
-        `;
+    <strong>${countyName}</strong><br>
+    Supervisor: ${countyInfo.supervisor || 'TBD'}<br>
+    Email: ${countyInfo.email || 'Not available'}
+`;
 
         layer.bindTooltip(tooltipContent, {
             className: 'county-tooltip',
