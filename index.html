@@ -20,7 +20,7 @@
 </head>
 <body>
     <h1>Florida Music Supervisors</h1>
-    <p>Hover over a county to see its music supervisor and email. Click a county to visit its school district website.</p>
+    <p>Please click on a county to view current music supervisor information</p>
     <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -123,7 +123,7 @@
                         fillColor: '#ccc',
                         fillOpacity: 0.5
                     },
-                                        onEachFeature: function(feature, layer) {
+                                            onEachFeature: function(feature, layer) {
                         const countyName = feature.properties.NAME;
                         const countyInfo = counties[countyName];
                     
@@ -140,6 +140,12 @@
                     
                             // Bind the pop-up to the layer
                             layer.bindPopup(popupContent);
+                    
+                            // Bind a tooltip to show the county name on hover
+                            layer.bindTooltip(`${countyName}`, {
+                                className: 'county-tooltip',
+                                sticky: true, // Keeps the tooltip near the cursor
+                            });
                     
                             layer.on('mouseover', function() {
                                 this.setStyle({ fillColor: '#6c757d', fillOpacity: 0.7 });
