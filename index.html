@@ -3,46 +3,419 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Florida Music Supervision Association</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
+        /* Inter Font */
+        body {
+            font-family: 'Inter', sans-serif;
         }
+
+        /* Leaflet map container needs a defined height */
         #map {
-            width: 100%;
-            height: 100vh;
-            background: white;
-            position: relative;
-            z-index: 1;
+            height: calc(100vh - 4rem); /* Header height is 4rem (h-16 from Tailwind) */
         }
-        .leaflet-container {
-            background: white !important;
+
+        /* Custom tooltip style for Leaflet */
+        .county-tooltip {
+            background-color: white;
+            border: 1px solid #ccc;
+            padding: 5px;
+            border-radius: 0.25rem; /* rounded-sm */
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            font-size: 0.875rem; /* text-sm */
         }
-        .leaflet-tile-pane {
-            opacity: 1 !important;
+
+        /* Styling for Leaflet popups */
+        .leaflet-popup-content-wrapper {
+            max-width: 350px; /* Increased max-width for popups */
+            border-radius: 0.5rem; /* rounded-lg */
+        }
+        .leaflet-popup-content {
+            margin: 1rem; /* p-4 */
+            font-size: 0.875rem; /* text-sm */
+            line-height: 1.5;
+        }
+        .leaflet-popup-content b {
+             color: #374151; /* gray-700 */
+             font-weight: 600; /* semibold */
+        }
+        .popup-county-name {
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 700; /* bold */
+            color: #b91c1c; /* red-700 */
+            margin-bottom: 0.5rem; /* mb-2 */
+            display: block;
+        }
+        .popup-link-item {
+            display: flex;
+            align-items: center; /* Vertically align icon and text */
+            margin-top: 0.25rem; /* mt-1 */
+        }
+        .popup-link-item svg {
+            width: 1rem; /* w-4 */
+            height: 1rem; /* h-4 */
+            margin-right: 0.5rem; /* mr-2 */
+            fill: currentColor; /* Use text color for SVG fill */
+            flex-shrink: 0; /* Prevent icon from shrinking */
+        }
+        /* Links will now allow the container to expand, rather than breaking words */
+        .popup-link-item a {
+            /* min-width: 0; /* Potentially useful if flex layout causes issues with long unbroken strings, but often not needed if container can expand */
+        }
+
+        /* Styling for the static info panel */
+        #info {
+            max-height: calc(100vh - 6rem); 
+            overflow-y: auto; 
+        }
+        .legend-color-box {
+            display: inline-block;
+            width: 0.75rem; /* w-3 */
+            height: 0.75rem; /* h-3 */
+            margin-right: 0.5rem; /* mr-2 */
+            border-radius: 0.125rem; /* rounded-sm */
+            flex-shrink: 0; /* Prevent shrinking in flex container */
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 0, 0, 0.1); /* Light grey track */
+            border-left-color: #b91c1c; /* red-700 for spinner color */
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Reset Map Button Style */
+        #reset-view-btn {
+            position: absolute;
+            top: calc(4rem + 10px); /* Below header (4rem) + 10px margin */
+            left: 10px;
+            z-index: 400; 
+            background-color: white;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-radius: 0.25rem; /* rounded */
+            padding: 0.5rem; /* p-2 */
+            cursor: pointer;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+            transition: all 0.2s ease-in-out;
+        }
+        #reset-view-btn:hover {
+            background-color: #f3f4f6; /* gray-100 */
+        }
+        #reset-view-btn svg {
+            width: 1.25rem; /* w-5 */
+            height: 1.25rem; /* h-5 */
+            fill: #374151; /* gray-700 */
         }
     </style>
 </head>
-<body>
-    <div id="map"></div>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
+<body class="bg-gray-100">
+
+    <header class="bg-red-700 text-white p-4 shadow-md fixed w-full top-0 z-50 h-16 flex items-center">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <h1 class="text-xl font-semibold">Florida Music Supervisors Map</h1>
+            </div>
+            <nav class="flex space-x-4 md:space-x-6">
+                <a href="https://fmea.org" target="_blank" rel="noopener noreferrer" class="hover:text-red-200 focus:text-red-200 focus:outline-none focus:ring-2 focus:ring-red-300 rounded px-2 py-1 transition-colors duration-150 ease-in-out">FMEA</a>
+                <a href="https://fmea.org/programs/job-bank/" target="_blank" rel="noopener noreferrer" class="hover:text-red-200 focus:text-red-200 focus:outline-none focus:ring-2 focus:ring-red-300 rounded px-2 py-1 transition-colors duration-150 ease-in-out">Jobs</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="pt-16">
+        <div id="map" class="w-full">
+            <div id="loading-indicator" class="absolute inset-0 flex flex-col items-center justify-center bg-white bg-opacity-85 z-40">
+                <div class="spinner"></div>
+                <p class="text-lg font-semibold text-gray-700">Loading Map Data...</p>
+            </div>
+            <button id="reset-view-btn" title="Reset Map View" aria-label="Reset Map View" class="focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-500">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                    <path d="M10 20a10 10 0 1 1 0-20 10 10 0 0 1 0 20zm0-2a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm-1-7.59V7a1 1 0 0 1 2 0v3.59l2.95 2.95a1 1 0 0 1-1.41 1.41L10 12.41l-2.54 2.54a1 1 0 0 1-1.41-1.41L9 10.41zM10 6a1 1 0 0 1-1-1V3a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1z"/>
+                </svg>
+            </button>
+        </div>
+
+        <div id="info" class="absolute top-20 right-4 md:right-5 bg-white p-4 shadow-lg rounded-lg w-full max-w-xs sm:max-w-sm md:max-w-md z-40 border border-gray-200">
+            <h2 class="text-lg font-semibold mb-2 text-red-700">Welcome!</h2>
+            <p class="text-sm text-gray-700 mb-2">
+                This interactive map highlights music supervisors across Florida's counties.
+            </p>
+            <p class="text-sm text-gray-700 mb-3">
+                Click on a county to see its contact information.
+            </p>
+            <div class="space-y-1">
+                <p class="text-xs text-gray-600 flex items-center">
+                    <span class="legend-color-box" style="background-color: #fca5a5; border: 1px solid #b91c1c;"></span>
+                    Active Supervisor
+                </p>
+                <p class="text-xs text-gray-600 flex items-center">
+                    <span class="legend-color-box" style="background-color: #fbbf24; border: 1px solid #d97706;"></span>
+                    No Listed Supervisor
+                </p>
+                <p class="text-xs text-gray-600 flex items-center">
+                    <span class="legend-color-box" style="background-color: #d1d5db; border: 1px solid #6b7280;"></span>
+                    No Data Available
+                </p>
+            </div>
+            <p class="text-sm text-gray-700 mt-3">
+                If a county does not have a supervisor,
+                feel free to reach out to a local county representative or Dr. Christopher Burns,
+                Osceola County Music Supervisor at
+                <a href="mailto:christopher.burns@osceolaschools.net" class="text-red-600 hover:underline focus:underline focus:outline-none focus:ring-1 focus:ring-red-300 rounded">christopher.burns@osceolaschools.net</a>.
+            </p>
+        </div>
+    </main>
+
+    <footer class="bg-red-700 text-white p-4 text-center text-sm">
+        <p>
+            For inquiries, contact Dr. Christopher Burns, President of the Florida Music Supervision Association, Osceola County, at
+            <a href="mailto:christopher.burns@osceolaschools.net" class="hover:underline focus:underline focus:outline-none focus:ring-1 focus:ring-red-300 rounded">christopher.burns@osceolaschools.net</a>.
+        </p>
+        <p class="mt-1">&copy; <span id="currentYear"></span> Florida Music Supervision Association. All rights reserved.</p>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var map = L.map('map').setView([27.9944024, -81.7602544], 7);
-            
-            L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}{r}.png', {
-                attribution: 'Map tiles by <a href="https://stamen.com" target="_blank" rel="noopener noreferrer">Stamen Design</a>, under <a href="https://creativecommons.org/licenses/by/3.0" target="_blank" rel="noopener noreferrer">CC BY 3.0</a>',
+        document.addEventListener('DOMContentLoaded', function () {
+            // Update current year in footer
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const resetViewBtn = document.getElementById('reset-view-btn');
+            let geojsonLayer; 
+            const initialCoords = [27.9944024, -81.7602544];
+            const initialZoom = 7;
+
+            // Initialize the map
+            var map = L.map('map').setView(initialCoords, initialZoom); 
+
+            // Add Stamen Toner Lite tile layer
+            L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}{r}.{ext}', {
+                attribution: 'Map tiles by <a href="http://stamen.com" target="_blank" rel="noopener noreferrer" class="text-red-600 hover:underline">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0" target="_blank" rel="noopener noreferrer" class="text-red-600 hover:underline">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org" target="_blank" rel="noopener noreferrer" class="text-red-600 hover:underline">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" class="text-red-600 hover:underline">ODbL</a>.',
                 subdomains: 'abcd',
                 minZoom: 0,
                 maxZoom: 20,
-                tileSize: 256,
-                zIndex: 1
+                ext: 'png'
             }).addTo(map);
+
+            // Reset View Button Functionality
+            if(resetViewBtn) {
+                resetViewBtn.addEventListener('click', function() {
+                    map.setView(initialCoords, initialZoom);
+                });
+            }
+
+            // County supervisor data (embedded in the script)
+            const countiesData = {
+                "Alachua": { "supervisor": "Diana Rollo", "email": "Rollod@gm.sbac.edu", "website": "https://www.sbac.edu/" },
+                "Baker": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.bakerk12.org/" },
+                "Bay": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.bay.k12.fl.us/" },
+                "Bradford": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.bradfordschools.org/" },
+                "Brevard": { "supervisor": "Minnie Orr", "email": "Orr.Minnie@brevardschools.org", "website": "https://www.brevardschools.org/" },
+                "Broward": { "supervisor": "Joe Luechauer", "email": "joeluechauer@browardschools.com", "website": "https://www.browardschools.com/" },
+                "Calhoun": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.calhounflschools.org/" },
+                "Charlotte": { "supervisor": "Ellen Harvey", "email": "Ellen.Harvey@yourcharlotteschools.net", "website": "https://www.yourcharlotteschools.net/" },
+                "Citrus": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.citrusschools.org/" },
+                "Clay": { "supervisor": "Christopher Gugel", "email": "christopher.gugel@myoneclay.net", "website": "https://www.oneclay.net/" },
+                "Collier": { "supervisor": "Skip (Harry) Pardee", "email": "pardeh@collierschools.com", "website": "https://www.collierschools.com/" },
+                "Columbia": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.columbiak12.com/" },
+                "DeSoto": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.desotoschools.com/" },
+                "Dixie": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.dixie.k12.fl.us/" },
+                "Duval": { "supervisor": "Laurie Hoppock", "email": "HoppockL@duvalschools.org", "website": "https://www.duvalschools.org/" },
+                "Escambia": { "supervisor": "Barbie Spears", "email": "bspears@ecsdfl.us", "website": "https://www.escambiaschools.org/" },
+                "Flagler": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.flaglerschools.com/" },
+                "Franklin": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.franklincountyschools.org/" },
+                "Gadsden": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.gadsdenschools.org/" },
+                "Gilchrist": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.gilchristschools.org/" },
+                "Glades": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.gladesedu.com/" },
+                "Gulf": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.gulfcoschools.com/" },
+                "Hamilton": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.hamiltonfl.com/" },
+                "Hardee": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.hardee.k12.fl.us/" },
+                "Hendry": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.hendry-schools.org/" },
+                "Hernando": { "supervisor": "Joe Harrin", "email": "Harrin_j@hcsb.k12.fl.us", "website": "https://www.hernandoschools.org/" },
+                "Highlands": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.highlands.k12.fl.us/" },
+                "Hillsborough": { "supervisor": "Jon Sever", "email": "jon.sever@hcps.net", "website": "https://www.hillsboroughschools.org/" },
+                "Holmes": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.hdsb.org/" },
+                "Indian River": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.indianriverschools.org/" },
+                "Jackson": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.jcsb.org/" },
+                "Jefferson": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.jeffersonschooldistrict.org/" },
+                "Lafayette": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.lafayette.k12.fl.us/" },
+                "Lake": { "supervisor": "Christina Szuba", "email": "szubac@lake.k12.fl.us", "website": "https://www.lake.k12.fl.us/" },
+                "Lee": { "supervisor": "Jason Thomashefsky", "email": "JasonET@LeeSchools.net", "website": "https://www.leeschools.net/" },
+                "Leon": { "supervisor": "Benny Bolden", "email": "boldenb@leonschools.net", "website": "https://www.leonschools.net/" },
+                "Levy": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.levyk12.org/" },
+                "Liberty": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.lcsb.org/" },
+                "Madison": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.madison.k12.fl.us/" },
+                "Manatee": { "supervisor": "Rhea Skaggs", "email": "skaggsr@manateeschools.net", "website": "https://www.manateeschools.net/" },
+                "Marion": { "supervisor": "Brooke Hutto", "email": "brooke.hutto@marion.k12.fl.us", "website": "https://www.marionschools.net/" },
+                "Martin": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.martinschools.org/" },
+                "Miami-Dade": { "supervisor": "Patricio Suarez", "email": "psuarez@dadeschools.net", "website": "https://www.dadeschools.net/" },
+                "Monroe": { "supervisor": "Gary Hernandez", "email": "gary.hernandez@keysschools.com", "website": "https://www.keysschools.com/" },
+                "Nassau": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.nassau.k12.fl.us/" },
+                "Okaloosa": { "supervisor": "Terry Schroeder", "email": "Teresa.Schroeder@Okaloosaschools.com", "website": "https://www.okaloosaschools.com/" },
+                "Okeechobee": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.okee.k12.fl.us/" },
+                "Orange": { "supervisor": "Jason Locker", "email": "Jason.Locker@ocps.net", "website": "https://www.ocps.net/" },
+                "Osceola": { "supervisor": "Chris Burns", "email": "Christopher.Burns@osceolaschools.net", "website": "https://www.osceolaschools.net/" },
+                "Palm Beach": { "supervisor": "Cleve Maloon", "email": "cleve.maloon@palmbeachschools.org", "website": "https://www.palmbeachschools.org/" },
+                "Pasco": { "supervisor": "Thomas Viking", "email": "tviking@pasco.k12.fl.us", "website": "https://www.pasco.k12.fl.us/" },
+                "Pinellas": { "supervisor": "Ajori Spencer", "email": "spencera@pcsb.org", "website": "https://www.pcsb.org/" },
+                "Polk": { "supervisor": "Beth Cummings", "email": "beth.cummings@polk-fl.net", "website": "https://www.polk-fl.net/" },
+                "Putnam": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.putnamschools.org/" },
+                "Santa Rosa": { "supervisor": "Alicia Coon", "email": "CoonA@santarosa.k12.fl.us", "website": "https://www.santarosa.k12.fl.us/" },
+                "Sarasota": { "supervisor": "Angela Hartvigsen", "email": "Angela.Hartvigsen@sarasotacountyschools.net", "website": "https://www.sarasotacountyschools.net/" },
+                "Seminole": { "supervisor": "Lindsey Williams", "email": "willialz2@myscps.us", "website": "https://www.scps.k12.fl.us/" },
+                "St Johns": { "supervisor": "Joanne Crowder", "email": "joanne.crowder@stjohns.k12.fl.us", "website": "https://www.stjohns.k12.fl.us/" },
+                "St Lucie": { "supervisor": "Kevin Perry", "email": "kevin.perry@stlucieschools.org", "website": "https://www.stlucieschools.org/" },
+                "Sumter": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.sumter.k12.fl.us/" },
+                "Suwannee": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.suwannee.k12.fl.us/" },
+                "Taylor": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.taylor.k12.fl.us/" },
+                "Union": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.union.k12.fl.us/" },
+                "Volusia": { "supervisor": "John Dupuis", "email": "jjdupuis@volusia.k12.fl.us", "website": "https://www.volusia.k12.fl.us/" },
+                "Wakulla": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.wakulla.k12.fl.us/" },
+                "Walton": { "supervisor": "Jaime Mitchell", "email": "mitchellj@walton.k12.fl.us", "website": "https://www.walton.k12.fl.us/" },
+                "Washington": { "supervisor": "No current music supervisor", "email": "Not available", "website": "https://www.wcsb.us/" }
+            };
+
+            // URL for GeoJSON data
+            const geoJsonUrl = 'https://raw.githubusercontent.com/clb1015/FMSA-Page/main/Florida_County_Boundaries_with_FDOT_Districts_6074369993038631266.geojson';
+
+            if (loadingIndicator) loadingIndicator.style.display = 'flex';
+
+            // Fetch GeoJSON data
+            fetch(geoJsonUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}. Failed to load GeoJSON from: ${geoJsonUrl}`);
+                    }
+                    return response.json();
+                })
+                .then(geoJsonData => {
+                    // GeoJSON loaded, proceed with map layer creation using the inline countiesData
+                    if (loadingIndicator) loadingIndicator.style.display = 'none';
+                    initializeMapLayers(geoJsonData, countiesData);
+                })
+                .catch(err => {
+                    console.error('Error loading GeoJSON data:', err);
+                    if (loadingIndicator) loadingIndicator.style.display = 'none';
+                    const mapDiv = document.getElementById('map');
+                    if (mapDiv) {
+                         mapDiv.innerHTML = `<div class="p-4 text-center text-red-600 bg-red-100 border border-red-400 rounded-md">
+                                                    <p><strong>Error:</strong> Could not load map data.</p>
+                                                    <p>${err.message}</p>
+                                                    <p>Please ensure data files are correctly placed and accessible, and check the browser console for more details.</p>
+                                                </div>`;
+                    }
+                });
+
+            function initializeMapLayers(geoJsonData, countiesData) {
+                const hasSupervisorStyle = { 
+                    color: '#b91c1c', weight: 1, fillColor: '#fca5a5', fillOpacity: 0.6
+                };
+                const noSupervisorStyle = { 
+                    color: '#d97706', weight: 1, fillColor: '#fbbf24', fillOpacity: 0.6
+                };
+                const unknownDataStyle = { 
+                    color: '#6b7280', weight: 1, fillColor: '#d1d5db', fillOpacity: 0.5
+                };
+                const mouseOverHighlightStyle = { 
+                    fillOpacity: 0.8, weight: 2.5 
+                };
+                
+                geojsonLayer = L.geoJSON(geoJsonData, {
+                    style: function(feature) {
+                        const countyNameProperties = ['NAME', 'COUNTYNAME', 'name', 'Name', 'COUNTY_NAM', 'COUNTY'];
+                        let cName = '';
+                        for (const prop of countyNameProperties) {
+                            if (feature.properties && feature.properties[prop]) {
+                                cName = String(feature.properties[prop]).trim();
+                                break;
+                            }
+                        }
+                        if (cName && countiesData[cName]) {
+                            return countiesData[cName].supervisor === "No current music supervisor" ? noSupervisorStyle : hasSupervisorStyle;
+                        }
+                        return unknownDataStyle; 
+                    },
+                    onEachFeature: function(feature, layer) {
+                        const countyNameProperties = ['NAME', 'COUNTYNAME', 'name', 'Name', 'COUNTY_NAM', 'COUNTY'];
+                        let countyName = '';
+                        for (const prop of countyNameProperties) {
+                            if (feature.properties && feature.properties[prop]) {
+                                countyName = String(feature.properties[prop]).trim();
+                                break;
+                            }
+                        }
+
+                        if (!countyName) {
+                            layer.bindTooltip(`Unknown County`, { className: 'county-tooltip', sticky: true });
+                            layer.setStyle(unknownDataStyle); 
+                            return; 
+                        }
+                        
+                        const countyInfo = countiesData[countyName];
+                        
+                        layer.bindTooltip(`${countyName}`, {
+                            className: 'county-tooltip', sticky: true, direction: 'top', offset: [0, -10]
+                        });
+
+                        let popupContent = `<span class="popup-county-name">${countyName} County</span>`;
+                        if (countyInfo) {
+                            popupContent += `
+                                <div class="space-y-1 mt-1">
+                                    <div><b>Supervisor:</b> ${countyInfo.supervisor || 'No supervisor available'}</div>
+                                    <div class="popup-link-item">
+                                        <svg viewBox="0 0 20 20"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path></svg>
+                                        <b>Email:</b>&nbsp; 
+                                        ${countyInfo.email !== "Not available" ?
+                                            `<a href="mailto:${countyInfo.email}" class="text-red-600 hover:underline focus:underline focus:outline-none focus:ring-1 focus:ring-red-300 rounded">${countyInfo.email}</a>` :
+                                            'Not available'}
+                                    </div>
+                                    <div class="popup-link-item">
+                                        <svg viewBox="0 0 20 20"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.022 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path></svg>
+                                        <b>Website:</b>&nbsp; 
+                                        ${countyInfo.website ?
+                                            `<a href="${countyInfo.website}" target="_blank" rel="noopener noreferrer" class="text-red-600 hover:underline focus:underline focus:outline-none focus:ring-1 focus:ring-red-300 rounded">District Website</a>` :
+                                            'Not available'}
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            popupContent += `<p class="text-sm text-gray-600 mt-1">No detailed supervisor information available for this county in our records.</p>`;
+                        }
+                        layer.bindPopup(popupContent);
+
+                        layer.on('mouseover', function(e) {
+                            const currentStyle = e.target.options.style || (geojsonLayer.options.style ? geojsonLayer.options.style(e.target.feature) : {});
+                            this.setStyle({
+                                ...currentStyle, 
+                                fillOpacity: mouseOverHighlightStyle.fillOpacity, 
+                                weight: mouseOverHighlightStyle.weight
+                            });
+                            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                                layer.bringToFront();
+                            }
+                        });
+
+                        layer.on('mouseout', function(e) {
+                           geojsonLayer.resetStyle(this);
+                        });
+                    }
+                }).addTo(map);
+            } // End of initializeMapLayers function
         });
     </script>
 </body>
 </html>
+```
